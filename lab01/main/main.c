@@ -8,6 +8,32 @@
 #include "lcd.h"
 #include "pac.h"
 
+struct RectangleValues {
+    coord_t x0;
+	coord_t y0;
+	coord_t x1;
+	coord_t y1;
+	color_t color;
+};
+
+struct RoundRectangleValues {
+    coord_t x0;
+	coord_t y0;
+	coord_t x1;
+	coord_t y1;
+	uint16_t radius;
+	color_t color;
+};
+
+struct CircleValues {
+	coord_t x0;
+	coord_t y0;
+	uint16_t radius;
+	color_t color;
+} 
+
+
+
 static const char *TAG = "lab01";
 
 #define delayMS(ms) \
