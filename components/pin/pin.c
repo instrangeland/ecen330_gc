@@ -387,8 +387,8 @@
 #define REG(r) (*(volatile uint32_t *)(r))
 #define REG_BITS 32
 // TODO: Finish these macros. HINT: Use the REG() macro.
-#define REG_SET_BIT(r,b) r = (r | (0x1 << b))
-#define REG_CLR_BIT(r,b) r = (r & ~(0x1 << b))
+#define REG_SET_BIT(r,b) (r |= (0x1 << b))
+#define REG_CLR_BIT(r,b) (r &= ~(0x1 << b))
 #define REG_GET_BIT(r,b) ((r >> b) & 0x1)
 
 #define GPIO_REG_OFFSET 4
@@ -429,7 +429,7 @@ int32_t pin_reset(pin_num_t pin)
 		rtc_gpio_pullup_en(pin);
 		rtc_gpio_pulldown_dis(pin);
 	}
-	reg(IO_MUX_REG(n)) = 0x00;
+	REG(IO_MUX_REG(pin)) = 0x00;
 	// TODO: Reset GPIO_FUNCn_OUT_SEL_CFG_REG: GPIO_FUNCn_OUT_SEL=0x100
 	
 	IO_FUNC_REG(pin) &= OUT_SEL_SETUP_VAL;
@@ -437,7 +437,7 @@ int32_t pin_reset(pin_num_t pin)
 	//MCU_SEL
 	REG_CLR_BIT(IO_MUX_PIN(pin), MCU_SEL_TOP);
 	REG_CLR_BIT(IO_MUX_PIN(pin), MCU_SEL_BOT);
-	REG_SET_BIT(IO_MUX_PIN(pin), MCU_SEL_BOT + 1);
+	REG_SET_BIT(IO_MUX_PIN(pin), (MCU_SEL_BOT + 1));
 	//FUN_DRV
 	REG_CLR_BIT(IO_MUX_PIN(pin), FUN_DRV_BOT);
 	REG_SET_BIT(IO_MUX_PIN(pin), FUN_DRV_TOP);
@@ -497,20 +497,20 @@ int32_t pin_input(pin_num_t pin, bool enable)
 int32_t pin_output(pin_num_t pin, bool enable)
 {
 	// TODO: Set or clear the I/O pin bit in the ENABLE or ENABLE1 register
-	if (pin > SECOND_REGISTER_PIN_CUTOFF) {
-		pin -= (SECOND_REGISTER_PIN_CUTOFF+1);
+	if (pin > SECOND_REG_PIN_CUTOFF) {
+		pin -= (SECOND_REG_PIN_CUTOFF+1);
 		if (enable) {
-			REG_SET_BIT(REG(GPIO_ENABLE1_W1TS_REG), pin)
+			REG_SET_BIT(REG(GPIO_ENABLE1_W1TS_REG), pin);
 		} else {
-			REG_SET_BIT(REG(GPIO_ENABLE1_W1TC_REG), pin)
+			REG_SET_BIT(REG(GPIO_ENABLE1_W1TC_REG), pin);
 		}
 		//we use ENABLE1 regs
 	} else {
 		//we use ENABLE regs
 		if (enable) {
-			REG_SET_BIT(REG(GPIO_ENABLE_W1TS_REG), pin)
+			REG_SET_BIT(REG(GPIO_ENABLE_W1TS_REG), pin);
 		} else {
-			REG_SET_BIT(REG(GPIO_ENABLE_W1TC_REG), pin)
+			REG_SET_BIT(REG(GPIO_ENABLE_W1TC_REG), pin);
 		}
 	}
 	return 0;
@@ -533,44 +533,41 @@ int32_t pin_set_level(pin_num_t pin, int32_t level)
 {
 		if (pin > SECOND_REG_PIN_CUTOFF) {
 		pin -= SECOND_REG_PIN_CUTOFF;
-		if (enable) {
-			REG_SET_BIT(REG(GPIO_OUT1_W1TS_REG), pin)
+		if (level) {
+			REG_SET_BIT(REG(GPIO_OUT1_W1TS_REG), pin);
 		} else {
-			REG_SET_BIT(REG(GPIO_OUT1_W1TC_REG), pin)
+			REG_SET_BIT(REG(GPIO_OUT1_W1TC_REG), pin);
 		}
 		//we use ENABLE1 regs
 	} else {
 		//we use ENABLE regs
-		if (enable) {
-			REG_SET_BIT(REG(GPIO_OUT_W1TS_REG), pin)
+		if (level) {
+			REG_SET_BIT(REG(GPIO_OUT_W1TS_REG), pin);
 		} else {
-			REG_SET_BIT(REG(GPIO_OUT_W1TC_REG), pin)
+			REG_SET_BIT(REG(GPIO_OUT_W1TC_REG), pin);
 		}
 	}
 	return 0;
-	return 0SECOND_REGISTER_PIN_CUTOFF
 }
 
 // Gets the input signal level if the pin is configured as an input.
 int32_t pin_get_level(pin_num_t pin)
 {
-	int32_t retval = 0;
 	// TODO: Get the I/O pin bit from the IN or IN1 register
 	if (pin > SECOND_REG_PIN_CUTOFF) {
-		pin -= SECOND_REG_PIN_CUTOFF;
-		ret_val = REG_GET_BIT(REG(GPIO_IN1_REG), pin);
-		//we use ENABLE1 regs
+		pin -= (SECOND_REG_PIN_CUTOFF+1);
+		return REG_GET_BIT(REG(GPIO_IN1_REG),pin);
 	} else {
-		ret_val = REG_GET_BIT(REG(GPIO_IN_REG), pin);
+		return REG_GET_BIT(REG(GPIO_IN_REG),pin);
 	}
-	return ret_val;
+
 }
 
 // Get the value of the input registers, one pin per bit.
 // The two 32-bit input registers are concatenated into a uint64_t.
 uint64_t pin_get_in_reg(void)
 {
-	uint64_t ret_val = (REG(GPIO_IN1_REG) << (SECOND_REG_PIN_CUTOFF+1)) + REG(GPIO_IN_REG);
+	uint64_t ret_val = ((uint64_t) REG(GPIO_IN1_REG) << (SECOND_REG_PIN_CUTOFF+1)) + REG(GPIO_IN_REG);
 	return ret_val;
 }
 
@@ -578,6 +575,6 @@ uint64_t pin_get_in_reg(void)
 // The two 32-bit output registers are concatenated into a uint64_t.
 uint64_t pin_get_out_reg(void)
 {
-	uint64_t ret_val = (REG(GPIO_OUT1_REG) << (SECOND_REG_PIN_CUTOFF+1)) + REG(GPIO_IN_REG);
+	uint64_t ret_val = ((uint64_t) REG(GPIO_OUT1_REG) << (SECOND_REG_PIN_CUTOFF+1)) + REG(GPIO_OUT_REG);
 	return ret_val;
 }
