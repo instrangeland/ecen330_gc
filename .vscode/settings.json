@@ -1,5 +1,7 @@
 {
     "files.associations": {
-        "hw_gc.h": "c"
+        "hw_gc.h": "c",
+        "algorithm": "c",
+        "sound.h": "c"
     }
 }
