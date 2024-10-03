@@ -14,6 +14,7 @@
 #define MAX_TONE 0xFF
 #define HALF 2
 #define QUARTER 4
+#define TAU 6.28
 #define NOT_LAST_QUARTER 3
 
 #define tone_stop() sound_stop()

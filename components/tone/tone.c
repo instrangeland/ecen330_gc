@@ -7,6 +7,7 @@
 
 uint8_t *audio = NULL;
 uint32_t sample_rate = 0;
+// inits the sound buffer and jank
 int32_t tone_init(uint32_t sample_hz)
 {
     sample_rate = sample_hz;
@@ -49,31 +50,41 @@ void tone_start(tone_t tone, uint32_t freq)
             audio[t] = (uint8_t)val;
             break;
         }
-    case TRIANGLE_T:
-        for (uint32_t t = 0; t < total_samples; t++)
-        {
-            if (t < (total_samples) / HALF)
-            {
-                val = (t + (total_samples / QUARTER) * MAX_TONE) / (total_samples / HALF);
-            }
-            else
-            {
-                val = ((t - (NOT_LAST_QUARTER * total_samples / QUARTER)) * MAX_TONE) / (total_samples / HALF);
-            }
-            val = (t * MAX_TONE) / total_samples;
-            audio[t] = (uint8_t)val;
-        }
-        break;
     case SAW_T:
         for (uint32_t t = 0; t < total_samples; t++)
         {
+            float adjusted_t;
             if (t < NOT_LAST_QUARTER * (total_samples) / QUARTER)
             {
-                val = ((t + (total_samples / QUARTER)) * MAX_TONE) / (total_samples / HALF);
+                adjusted_t = (t + (total_samples / QUARTER));
             }
             else
             {
-                val = MAX_TONE - ((t - (total_samples * NOT_LAST_QUARTER / QUARTER)) * MAX_TONE) / (total_samples / HALF);
+                adjusted_t = (t - (NOT_LAST_QUARTER * total_samples / QUARTER));
+            }
+            val = MAX_TONE * (adjusted_t / (total_samples));
+            audio[t] = (uint8_t)val;
+        }
+        break;
+    case TRIANGLE_T:
+        for (uint32_t t = 0; t < total_samples; t++)
+        {
+            float adjusted_t;
+            if (t < NOT_LAST_QUARTER * (total_samples) / QUARTER)
+            {
+                adjusted_t = (t + (total_samples / QUARTER));
+            }
+            else
+            {
+                adjusted_t = (t - (NOT_LAST_QUARTER * total_samples / QUARTER));
+            }
+            if (adjusted_t < total_samples / HALF)
+            {
+                val = MAX_TONE * (adjusted_t / (total_samples / HALF));
+            }
+            else
+            {
+                val = MAX_TONE - MAX_TONE * (adjusted_t / (total_samples / HALF));
             }
             audio[t] = (uint8_t)val;
         }
@@ -81,14 +92,17 @@ void tone_start(tone_t tone, uint32_t freq)
     case SINE_T:
         for (uint32_t t = 0; t < total_samples; t++)
         {
+            float adjusted_t;
+
             if (t < NOT_LAST_QUARTER * (total_samples) / QUARTER)
             {
-                val = sinf((t + (total_samples / QUARTER))) * MAX_TONE;
+                adjusted_t = TAU * (t + (total_samples / QUARTER)) / (total_samples);
             }
             else
             {
-                val = sinf((t - (total_samples * NOT_LAST_QUARTER / QUARTER))) * MAX_TONE;
+                adjusted_t = TAU * (t - (total_samples * NOT_LAST_QUARTER / QUARTER)) / (total_samples);
             }
+            val = sinf(adjusted_t) * MAX_TONE;
             audio[t] = (uint8_t)val;
         }
     case LAST_T:

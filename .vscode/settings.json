@@ -3,5 +3,6 @@
         "hw_gc.h": "c",
         "algorithm": "c",
         "sound.h": "c"
-    }
+    },
+    "cmake.sourceDirectory": "/fsf/eh574/Documents/ecen330_gc/lab02/main"
 }
